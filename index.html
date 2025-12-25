@@ -67,4 +67,40 @@
 
     function setState(state, updatedAt) {
       // state: "grid" або "inverter"
-      if (sta
+      if (state === "grid") {
+        document.body.style.background = "#0a6510";
+        titleEl.textContent = "МЕРЕЖА";
+        dotEl.style.background = "#00ff5a";
+        dotEl.style.boxShadow = "0 0 50px rgba(0,255,90,0.6)";
+      } else if (state === "inverter") {
+        document.body.style.background = "#6b0000";
+        titleEl.textContent = "ІНВЕРТОР";
+        dotEl.style.background = "#ff2a2a";
+        dotEl.style.boxShadow = "0 0 50px rgba(255,42,42,0.6)";
+      } else {
+        document.body.style.background = "#000";
+        titleEl.textContent = "...";
+        dotEl.style.background = "#666";
+        dotEl.style.boxShadow = "0 0 40px rgba(255,255,255,0.15)";
+      }
+      hintEl.textContent = updatedAt ? `Оновлено: ${updatedAt}` : "Оновлено";
+    }
+
+    async function poll() {
+      try {
+        // cache-bust щоб Safari/кеш не заважали
+        const res = await fetch(`${STATUS_URL}?t=${Date.now()}`, { cache: "no-store" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        setState(data.state, data.updatedAt || "");
+      } catch (e) {
+        hintEl.textContent = "Немає звʼязку…";
+        // залишаємо останній стан
+      }
+    }
+
+    poll();
+    setInterval(poll, 2000);
+  </script>
+</body>
+</html>
