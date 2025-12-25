@@ -1,106 +1,61 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="uk">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black" />
   <title>POWER</title>
-
   <style>
-    html, body {
-      margin: 0; padding: 0; width: 100%; height: 100%;
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
-      background: #000;
+    html, body { height:100%; margin:0; }
+    body {
+      display:flex; align-items:center; justify-content:center;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+      color:#fff;
+      transition: background 200ms ease;
     }
-    .wrap {
-      width: 100%; height: 100%;
-      display: flex; align-items: center; justify-content: center;
-      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-      box-sizing: border-box;
-    }
-    .card {
-      width: 100%; height: 100%;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      gap: 2vh;
-    }
-    .title {
-      font-size: 10vh;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: #fff;
-      text-align: center;
-    }
-    .dot {
-      width: 6vh; height: 6vh;
-      border-radius: 999px;
-      background: #666;
-      box-shadow: 0 0 40px rgba(255,255,255,0.15);
-    }
-    .hint {
-      position: fixed;
-      bottom: env(safe-area-inset-bottom);
-      left: 0; right: 0;
-      padding: 12px 16px;
-      font-size: 14px;
-      color: rgba(255,255,255,0.6);
-      text-align: center;
-    }
+    .wrap { text-align:center; padding:24px; }
+    .title { font-size: clamp(40px, 10vw, 96px); font-weight:800; letter-spacing:1px; }
+    .dot { display:inline-block; width:18px; height:18px; border-radius:50%; margin-right:10px; vertical-align:middle; }
+    .time { opacity:.85; margin-top:16px; font-size: clamp(14px, 3vw, 18px); }
+    .small { opacity:.75; margin-top:6px; font-size: 14px; }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="card">
-      <div id="title" class="title">...</div>
-      <div id="dot" class="dot"></div>
-    </div>
-    <div class="hint" id="hint">Підключення…</div>
+    <div class="title"><span class="dot" id="dot"></span><span id="text">ЗАВАНТАЖЕННЯ…</span></div>
+    <div class="time" id="time"></div>
+    <div class="small" id="err"></div>
   </div>
 
   <script>
-    const STATUS_URL = "./status.json"; // файл у репо поруч з index.html
-    const titleEl = document.getElementById("title");
-    const dotEl = document.getElementById("dot");
-    const hintEl = document.getElementById("hint");
+    const stateMap = {
+      grid: { bg:"#0a6510", text:"МЕРЕЖА" },
+      inverter: { bg:"#b00020", text:"ІНВЕРТОР" },
+    };
 
-    function setState(state, updatedAt) {
-      // state: "grid" або "inverter"
-      if (state === "grid") {
-        document.body.style.background = "#0a6510";
-        titleEl.textContent = "МЕРЕЖА";
-        dotEl.style.background = "#00ff5a";
-        dotEl.style.boxShadow = "0 0 50px rgba(0,255,90,0.6)";
-      } else if (state === "inverter") {
-        document.body.style.background = "#6b0000";
-        titleEl.textContent = "ІНВЕРТОР";
-        dotEl.style.background = "#ff2a2a";
-        dotEl.style.boxShadow = "0 0 50px rgba(255,42,42,0.6)";
-      } else {
-        document.body.style.background = "#000";
-        titleEl.textContent = "...";
-        dotEl.style.background = "#666";
-        dotEl.style.boxShadow = "0 0 40px rgba(255,255,255,0.15)";
-      }
-      hintEl.textContent = updatedAt ? `Оновлено: ${updatedAt}` : "Оновлено";
+    function setUI(state, updated) {
+      const s = stateMap[state] || { bg:"#374151", text:"НЕВІДОМО" };
+      document.body.style.background = s.bg;
+      document.getElementById("text").textContent = s.text;
+      document.getElementById("dot").style.background = "#ffffff";
+      document.getElementById("time").textContent = updated ? ("Оновлено: " + updated) : "";
     }
 
-    async function poll() {
+    async function tick() {
+      const errEl = document.getElementById("err");
       try {
-        // cache-bust щоб Safari/кеш не заважали
-        const res = await fetch(`${STATUS_URL}?t=${Date.now()}`, { cache: "no-store" });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        setState(data.state, data.updatedAt || "");
+        errEl.textContent = "";
+        const r = await fetch("./status.json?ts=" + Date.now(), { cache: "no-store" });
+        const j = await r.json();
+        setUI(j.state, j.updated);
       } catch (e) {
-        hintEl.textContent = "Немає звʼязку…";
-        // залишаємо останній стан
+        errEl.textContent = "Помилка читання status.json";
       }
     }
 
-    poll();
-    setInterval(poll, 2000);
+    tick();
+    setInterval(tick, 5000);
   </script>
 </body>
 </html>
