@@ -28,11 +28,13 @@
     <div class="small" id="err"></div>
   </div>
 
-  <script>
-    const stateMap = {
-      grid: { bg:"#0a6510", text:"МЕРЕЖА" },
-      inverter: { bg:"#b00020", text:"ІНВЕРТОР" },
-    };
+ <script>
+  const stateMap = {
+    grid: { bg:"#0a6510", text:"МЕРЕЖА" },
+    inverter: { bg:"#b00020", text:"ІНВЕРТОР" },
+    inv: { bg:"#b00020", text:"ІНВЕРТОР" }, // ← ОЦЕ ГОЛОВНЕ
+  };
+
 
     function setUI(state, updated) {
       const s = stateMap[state] || { bg:"#374151", text:"НЕВІДОМО" };
@@ -50,7 +52,7 @@
         const j = await r.json();
         setUI(j.state, j.updated);
       } catch (e) {
-        errEl.textContent = "Помилка читання status.json";
+        errEl.textContent = "Помилка читання status.json"
       }
     }
 
